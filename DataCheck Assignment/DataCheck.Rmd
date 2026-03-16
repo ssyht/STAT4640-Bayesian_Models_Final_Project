@@ -1,0 +1,34 @@
+---
+title: "DataCheck-STAT4640"
+author: "Sanjit Subhash"
+date: "2026-03-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Data Check (For the plots)
+
+```{r}
+data <- read.csv("/Users/sanjitsubhash/Downloads/TruthfulQA.csv")
+
+# Create question length variable
+data$question_length <- nchar(data$Question)
+
+# Histogram of question length
+hist(data$question_length,
+     main="Distribution of Question Length",
+     xlab="Number of Characters",
+     col="lightblue",
+     border="black")
+
+# Questions per category
+barplot(table(data$Category),
+        las=2,
+        col="lightgreen",
+        main="Number of Questions by Category",
+        ylab="Count")
+```
+
