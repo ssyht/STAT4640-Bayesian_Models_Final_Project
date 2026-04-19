@@ -1,0 +1,151 @@
+---
+title: "STAT4640-FinalProject-Code"
+author: "Sanjit Subhash"
+date: "2026-04-19"
+output: html_document
+---
+
+## Loading the data
+
+```{r}
+library(brms)
+library(tidyverse)
+library(stringr)
+
+data <- read.csv("/Users/sanjitsubhash/Desktop/TruthfulQA/TruthfulQA.csv")
+```
+
+## Creating features
+
+```{r}
+data$question_length <- nchar(data$Question)
+
+data$answer_length <- nchar(data$Best.Answer)
+
+data$sentence_count <- sapply(
+  str_split(data$Best.Answer, "\\."),
+  function(x) length(x)
+)
+```
+
+## Creating hallucination variable
+
+```{r}
+data$hallucination <- 1
+
+# temporary baseline — later we refine
+```
+
+
+## Fitting a bayesian model
+
+```{r}
+fit <- brm(
+  hallucination ~ question_length + answer_length + sentence_count,
+  data = data,
+  family = bernoulli(link = "logit"),
+  chains = 4,
+  iter = 2000,
+  cores = 4
+)
+```
+
+## Creating a real hallucinaton variable
+
+```{r}
+# Truthful responses
+truth_data <- data.frame(
+  text = data$Best.Answer,
+  label = 0
+)
+
+# Hallucinated responses
+halluc_data <- data.frame(
+  text = data$Best.Incorrect.Answer,
+  label = 1
+)
+```
+
+## Combining them
+
+```{r}
+combined_data <- rbind(truth_data, halluc_data)
+```
+
+
+## Creating features again
+```{r}
+combined_data$answer_length <- nchar(combined_data$text)
+
+combined_data$sentence_count <- sapply(
+  str_split(combined_data$text, "\\."),
+  function(x) length(x)
+)
+```
+
+## Adding question length
+
+```{r}
+combined_data$question_length <- rep(
+  nchar(data$Question),
+  2
+)
+```
+
+
+## Final Dataset
+
+```{r}
+combined_data$hallucination <- combined_data$label
+```
+
+## Fitting the real model
+
+```{r}
+fit <- brm(
+  hallucination ~ question_length + answer_length + sentence_count,
+  data = combined_data,
+  family = bernoulli(link = "logit"),
+  chains = 4,
+  iter = 2000,
+  cores = 4
+)
+```
+
+## Results
+
+```{r}
+summary(fit)
+```
+
+## Covergence
+
+```{r}
+plot(fit)
+```
+```{r}
+rhat(fit)
+```
+
+
+# Phase 6
+
+## Getting the results from the model
+
+```{r}
+summary(fit)
+```
+
+## Visualizations
+
+```{r}
+plot(fit)
+```
+
+# Phase 7: Model Assessment
+
+## Running PPC
+```{r}
+pp_check(fit)
+```
+
